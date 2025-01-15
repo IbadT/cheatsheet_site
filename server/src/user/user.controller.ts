@@ -52,9 +52,9 @@ export class UserController {
 
 
   // выбрать default avatar
-  @Patch("update-avatar")
-  async updateSelectedDefaultAvatar(@Query("id") id: string) {
-    return this.userService.updateSelectedDefaultAvatar(id);
+  @Patch("update-avatar/:id/:avatar_id")
+  async updateSelectedDefaultAvatar(@Param("id") id: string, @Param("avatar_id") avatar_id: string) {
+    return this.userService.updateSelectedDefaultAvatar(id, avatar_id);
   }
 
 

@@ -2,17 +2,13 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
   Param,
-  Delete,
   UseInterceptors,
   UploadedFile,
   HttpCode, HttpStatus, Res
 } from '@nestjs/common';
 import { AvatarService } from './avatar.service';
-import { CreateAvatarDto } from './dto/create-avatar.dto';
-import { UpdateAvatarDto } from './dto/update-avatar.dto';
 import {Avatar} from "./entities/avatar.entity";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {ApiBody, ApiConsumes, ApiOperation, ApiResponse} from "@nestjs/swagger";
@@ -22,15 +18,19 @@ import {Response} from 'express';
 
 
 
-// загрузить дефолтные аватарки
-
 @Controller('avatar')
 export class AvatarController {
   constructor(private readonly avatarService: AvatarService) {}
 
   @Get("get-all-avatars")
-  async getAllAvatars(): Promise<Avatar[]> {
+  // async getAllAvatars(@Res() res: Response) {
+  async getAllAvatars(@Res() res: Response): Promise<Avatar[]> {
     return this.avatarService.getAllAvatars();
+    // const avatars = this.avatarService.getAllAvatars();
+    // const buffer = Buffer.from(avatar, 'base64');
+    // res.setHeader('Content-Type', 'image/jpeg');
+    // res.setHeader('Content-Length', buffer.length.toString());
+    // res.end(buffer);
   };
 
   @Get(":id")

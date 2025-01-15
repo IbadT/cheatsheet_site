@@ -9,6 +9,11 @@ import {
 import {IsUUID} from "class-validator";
 import {Avatar} from "../../avatar/entities/avatar.entity";
 import {Role} from "../../entities/role.entity";
+import {PostEntity} from "../../post/entities/post.entity";
+import {SavedPost} from "../../entities/saved-post.entity";
+import {LikeEntity} from "../../entities/like.entity";
+import {CommentEntity} from "../../entities/comment.entity";
+import {FriendEntity} from "../../friend/entities/friend.entity";
 
 @Entity("users")
 export class User {
@@ -23,11 +28,6 @@ export class User {
         unique: true,
     })
     user_name: string;
-
-    // @Column("varchar", {
-    //     default: "",
-    // })
-    // avatar: string;
 
     @Column("varchar", {
         default: "",
@@ -47,11 +47,36 @@ export class User {
     @Column("varchar")
     password: string;
 
+
+    @OneToMany(() => FriendEntity, friend => friend.requester)
+    sentFriendRequests: FriendEntity[];
+
+    @OneToMany(() => FriendEntity, friend => friend.addressee)
+    receivedFriendRequests: FriendEntity[];
+
+
+
     @OneToOne(() => Avatar)
     @JoinColumn({
         name: "avatar_id",
     })
     avatar_id: Avatar;
+
+    @OneToMany(() => PostEntity, post => post.user)
+    posts: PostEntity[];
+
+
+    @OneToMany(() => LikeEntity, like => like.user)
+    likes: LikeEntity[];
+
+    @OneToMany(() => CommentEntity, comment => comment.user)
+    comments: CommentEntity[];
+
+    @OneToMany(() => SavedPost, savedPost => savedPost.user)
+    savedPosts: SavedPost[];
+
+
+
 
     @OneToOne(() => Role)
     @JoinColumn({

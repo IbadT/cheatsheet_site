@@ -85,13 +85,14 @@ export class UserService {
 
 
 // добавить в параметры картинку в байтах
-  async updateSelectedDefaultAvatar(id: string): Promise<{ message: string }> {
-
+  async updateSelectedDefaultAvatar(id: string, avatar_id: string): Promise<{ message: string }> {
+    return {message: avatar_id};
     const user = await this.userRepository.findOne({
       where: { id }
     });
     const result = await this.userRepository.save({
       ...user,
+      // avatar_id: avatar_id,
     })
     if(!result) {
       throw new BadRequestException("При обновлении фотографии пользователя возникла ошибка")

@@ -30,9 +30,11 @@ export class AvatarService {
   async addAvatar(avatar: string): Promise<{ status: string, message: string }> {
     const addedAvatar: Avatar = this.avatarRepository.create({avatar});
     const addedAvatarResult = await this.avatarRepository.save(addedAvatar);
+
     if(!addedAvatarResult) {
       throw new BadRequestException("Ошибка при добавлении аватарки");
     }
+
     return {
       status: "ok",
       message: "Аватарка успешно добавлена"
