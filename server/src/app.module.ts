@@ -1,29 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import {databaseProviders} from "./database/providers";
-import {User} from "./auth/entities/user.entity";
+import { UserModule } from './user/user.module';
 import {DatabaseModule} from "./database/database.module";
 import {ConfigModule} from "@nestjs/config";
+import { AvatarModule } from './avatar/avatar.module';
 
 @Module({
   imports: [
       ConfigModule.forRoot(),
       DatabaseModule,
-      // TypeOrmModule.forRoot({
-      //     type: 'postgres',
-      //     host: 'localhost',
-      //     port: 5432,
-      //     username: 'postgres',
-      //     password: 'postgres',
-      //     database: 'cheatsheet_site',
-      //     // entities: [User],
-      //     entities: [
-      //         __dirname + '/**/*.entity{.ts,.js}',
-      //     ],
-      //     synchronize: true,
-      // }),
-      AuthModule
+      UserModule,
+      AvatarModule
   ],
 })
 export class AppModule {}
