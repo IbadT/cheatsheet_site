@@ -15,6 +15,9 @@ import {LikeEntity} from "../../entities/like.entity";
 import {CommentEntity} from "../../entities/comment.entity";
 import {FriendEntity} from "../../friend/entities/friend.entity";
 
+
+
+// поле user_name - должно быть уникальным(при регистрации не создавался ползователь)
 @Entity("users")
 export class User {
     @PrimaryGeneratedColumn('uuid', {
@@ -24,10 +27,13 @@ export class User {
     @IsUUID("4")
     id: string;
 
+
+
     @Column("varchar",{
-        unique: true,
+        // unique: true,
     })
     user_name: string;
+
 
     @Column("varchar", {
         default: "",

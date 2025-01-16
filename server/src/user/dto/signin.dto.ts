@@ -14,7 +14,7 @@ export class SignInDto {
     @ApiProperty({
         type: String,
         required: true,
-        description: 'username',
+        description: 'user_name',
     })
     @IsNotEmpty()
     @IsString()

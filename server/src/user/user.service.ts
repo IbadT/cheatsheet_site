@@ -5,6 +5,8 @@ import {User} from "./entities/user.entity";
 import {SignInDto} from "./dto/signin.dto";
 import {JwtService} from "@nestjs/jwt";
 import * as bcrypt from 'bcrypt';
+import {Role} from "../entities/role.entity";
+import {CreateRole} from "./user.controller";
 
 
 @Injectable()
@@ -12,8 +14,45 @@ export class UserService {
   constructor(
       @InjectRepository(User)
       private readonly userRepository: Repository<User>,
+      @InjectRepository(Role)
+      private readonly roleRepository: Repository<Role>,
       private readonly jwtService: JwtService,
   ) {}
+
+  async getUser(id: string) {
+    return await this.userRepository.findOne({
+      where: {
+        id
+      },
+      relations: ['role'],
+    })
+  }
+
+
+  async addDefaultRoles(roleName: string) {
+    const role = this.roleRepository.create({
+      role_name: roleName
+    });
+    return await this.roleRepository.save(role);
+  };
+
+
+
+
+  async updateUserRole(id: string, role_id: string) {
+    const existingUser = await this.userRepository.findOne({ where: {id}});
+    if (!existingUser) {
+      throw new BadRequestException(`Пользователя с id: ${id} не существует`)
+    }
+
+    // return this.userRepository.update(id, {
+    //   role_id
+    // })
+  }
+
+
+
+
 
   async signIn(user: SignInDto) {
     const existingUser = await this.userRepository.findOne({
@@ -54,11 +93,22 @@ export class UserService {
       throw new BadRequestException("Пользователь с таким email уже существует")
     }
 
+    const role = await this.roleRepository.findOne({
+      where: {
+        role_name: "USER"
+      }
+    });
+
+
     const hashedPassword = await bcrypt.hash(user.password, 10);
+
     const newUser = {
       ...user,
+      role,
       password: hashedPassword,
     };
+
+    console.log(newUser)
 
     const createdUser = this.userRepository.create(newUser);
     await this.userRepository.save(createdUser);

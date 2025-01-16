@@ -1,9 +1,21 @@
 import {Controller, Get, Post, Body, Patch, Param, Delete, Query, ValidationPipe, UsePipes} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import {SignInDto} from "./dto/signin.dto";
-import {ApiTags} from "@nestjs/swagger";
+import {ApiProperty, ApiTags} from "@nestjs/swagger";
+import {IsNotEmpty, IsString} from "class-validator";
+
+
+export class CreateRole {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: 'Role name',
+  })
+  @IsString()
+  @IsNotEmpty()
+  role_name: string;
+}
 
 
 
@@ -13,12 +25,31 @@ import {ApiTags} from "@nestjs/swagger";
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // войти
+  @Get(":id")
+  async getUser(@Param('id') id: string) {
+    return this.userService.getUser(id);
+  }
 
+
+  @Post("add-role")
+  async addDefaultRoles(@Body() body: CreateRole) {
+    return this.userService.addDefaultRoles(body.role_name);
+  }
+
+
+  @Patch("update-user-role/:id/:role_id")
+  async updateUserRole(@Param('id') id: string, @Param('role_id') role_id: string) {
+    return this.userService.updateUserRole(id, role_id);
+  }
+
+
+
+  // войти
   @Post("signIn")
   async signIn(@Body() body: SignInDto) {
     return this.userService.signIn(body);
   }
+
 
   @Post("signUp")
   async signUp(@Body() body: SignInDto) {

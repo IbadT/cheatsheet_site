@@ -1,26 +1,65 @@
 import { Injectable } from '@nestjs/common';
 import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
+import {FriendEntity} from "./entities/friend.entity";
+import {User} from "../user/entities/user.entity";
+import {InjectRepository} from "@nestjs/typeorm";
+import {Repository} from "typeorm";
 
 @Injectable()
 export class FriendService {
-  create(createFriendDto: CreateFriendDto) {
-    return 'This action adds a new friend';
+  constructor(
+      @InjectRepository(FriendEntity)
+      private readonly friendRepository: Repository<FriendEntity>,
+      @InjectRepository(User)
+      private readonly userRepository: Repository<User>,
+  ) {}
+
+  async getFriends(userId: string): Promise<User[]> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: [
+          'sentFriendRequests',
+          'sentFriendRequests.addressee',
+          'receivedFriendRequests',
+          'receivedFriendRequests.requester'
+      ]
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const friends = user.sentFriendRequests
+        .filter(friend => friend.isAccepted)
+        .map(friend => friend.addressee)
+        .concat( user.receivedFriendRequests
+            .filter(friend => friend.isAccepted)
+            .map(friend => friend.requester)
+        );
+    return friends;
   }
 
-  findAll() {
-    return `This action returns all friend`;
+  async sendFriendRequest(requesterId: string, addresseeId: string): Promise<FriendEntity> {
+    const requester = await this.userRepository.findOne({ where: { id: requesterId }});
+    const addressee = await this.userRepository.findOne({ where: { id: addresseeId } });
+
+    if (!requester || !addressee) {
+      throw new Error('Requester or addressee not found');
+    }
+
+    const friendRequest = this.friendRepository.create({ requester, addressee });
+    return this.friendRepository.save(friendRequest);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} friend`;
-  }
+  async acceptFriendRequest(requestId: string): Promise<FriendEntity> {
+    const friendRequest = await this.friendRepository.findOne({ where: { id: requestId } });
 
-  update(id: number, updateFriendDto: UpdateFriendDto) {
-    return `This action updates a #${id} friend`;
-  }
+    if (!friendRequest) {
+      throw new Error('Friend request not found');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} friend`;
-  }
+    friendRequest.isAccepted = true;
+    return this.friendRepository.save(friendRequest);
+  };
 }
