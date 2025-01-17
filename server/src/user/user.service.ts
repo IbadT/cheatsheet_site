@@ -19,6 +19,14 @@ export class UserService {
       private readonly jwtService: JwtService,
   ) {}
 
+  async getByEmail(email: string) {
+    return await this.userRepository.findOne({
+      where: { email }
+    })
+  }
+
+
+
   async getUser(id: string) {
     return await this.userRepository.findOne({
       where: {
@@ -45,10 +53,16 @@ export class UserService {
       throw new BadRequestException(`Пользователя с id: ${id} не существует`)
     }
 
-    // return this.userRepository.update(id, {
-    //   role_id
-    // })
-  }
+    const role = await this.roleRepository.findOne({
+      where: {
+        id: role_id
+      }
+    })
+
+    return await this.userRepository.update(id, {
+      role
+    })
+  };
 
 
 
@@ -58,7 +72,8 @@ export class UserService {
     const existingUser = await this.userRepository.findOne({
       where: {
         email: user.email,
-      }
+      },
+      relations: ['role'],
     });
 
     if(!existingUser) {
@@ -70,7 +85,7 @@ export class UserService {
       throw new BadRequestException("Неверное имя пользователя или пароль");
     }
 
-    const payload = {sub: existingUser.id, email: user.email};
+    const payload = {sub: existingUser.id, email: user.email, role: existingUser.role};
     return {
       access_token: await this.jwtService.signAsync(payload),
     }
@@ -108,8 +123,6 @@ export class UserService {
       password: hashedPassword,
     };
 
-    console.log(newUser)
-
     const createdUser = this.userRepository.create(newUser);
     await this.userRepository.save(createdUser);
     return this.login(createdUser);
@@ -136,7 +149,7 @@ export class UserService {
 
 // добавить в параметры картинку в байтах
   async updateSelectedDefaultAvatar(id: string, avatar_id: string): Promise<{ message: string }> {
-    return {message: avatar_id};
+    // return {message: avatar_id};
     const user = await this.userRepository.findOne({
       where: { id }
     });
@@ -150,6 +163,20 @@ export class UserService {
     return {
       message: "ok"
     }
+  }
+
+
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.userRepository.findOne({
+      where: { user_name: username },
+      relations: ['role']
+    });
+
+    if (user && await bcrypt.compare(password, user.password)) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
   }
 
 }

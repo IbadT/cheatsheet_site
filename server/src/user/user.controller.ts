@@ -1,9 +1,24 @@
-import {Controller, Get, Post, Body, Patch, Param, Delete, Query, ValidationPipe, UsePipes} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  ValidationPipe,
+  UsePipes,
+  UseGuards
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import {SignInDto} from "./dto/signin.dto";
-import {ApiProperty, ApiTags} from "@nestjs/swagger";
+import {ApiProperty, ApiSecurity, ApiTags} from "@nestjs/swagger";
 import {IsNotEmpty, IsString} from "class-validator";
+import {Roles} from "../guards/roles.decorator";
+import {RolesGuard} from "../guards/roles.guard";
+import {JwtAuthGuard} from "../guards/jwt.guard";
+import {roles} from "../enums/roles.enum";
+import {AuthGuard} from "@nestjs/passport";
 
 
 export class CreateRole {
@@ -25,7 +40,13 @@ export class CreateRole {
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+
+  @ApiSecurity('JWT-auth')
+  @UseGuards(JwtAuthGuard)
   @Get(":id")
+  // @UseGuards(RolesGuard)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(roles.ADMIN)
   async getUser(@Param('id') id: string) {
     return this.userService.getUser(id);
   }
