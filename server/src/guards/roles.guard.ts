@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import {InjectRepository} from "@nestjs/typeorm";
 import {User} from "../user/entities/user.entity";
@@ -27,30 +27,32 @@ export class RolesGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
 
+        if(!user.role) {
+            throw new BadRequestException("У пользователя не назначена роль");
+        }
+
         const userWithRoles = await this.userRepository.findOne({
             where: {
-                id: user.id,
+                id: user.sub,
             },
-            relations: ['roles'],
+            relations: ['role'],
         })
-        console.log({ userWithRoles });
 
         if (!userWithRoles) {
             throw new ForbiddenException('Пользователь не найден');
         }
 
-        const { role_name } = await this.roleRepository.findOne({
+        const role = await this.roleRepository.findOne({
             where: {
-                id: userWithRoles.id
+                id: userWithRoles.role.id
             }
         });
-        console.log({ role_name });
 
-        if(roles.includes(rolesEnum.ADMIN) && role_name !== rolesEnum.ADMIN) {
+        if(roles.includes(rolesEnum.ADMIN) && role.role_name !== rolesEnum.ADMIN) {
             throw new ForbiddenException('У Вас нет прав администратора');
         }
 
-        const roleMatch = roles.some(role => role_name === role);
+        const roleMatch = roles.some(r => role.role_name === r);
 
         if (!roleMatch) {
             throw new ForbiddenException('У Вас нет прав для выполнения этой операции');

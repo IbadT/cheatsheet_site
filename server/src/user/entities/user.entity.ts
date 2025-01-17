@@ -62,11 +62,12 @@ export class User {
 
 
 
-    @OneToOne(() => Avatar)
-    @JoinColumn({
-        name: "avatar_id",
-    })
+    @OneToOne(() => Avatar, { eager: true }) // Используем eager loading для автоматической загрузки аватара 
+    @JoinColumn({ name: 'avatar_id' }) 
     avatar_id: Avatar;
+
+
+
 
     @OneToMany(() => PostEntity, post => post.user)
     posts: PostEntity[];

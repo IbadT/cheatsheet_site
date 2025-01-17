@@ -22,20 +22,18 @@ export const jwtConstants = {
 
 @Module({
   imports: [
-      // PassportModule.register({ defaultStrategy: 'jwt' }),
       TypeOrmModule.forFeature([User, Role, LikeEntity, SavedPost, FriendEntity]),
       DatabaseModule,
       PassportModule,
       JwtModule.register({
-          global: true,
+        //   global: true,
           secret: jwtConstants.secret,
-          // secret: 'DO NOT USE THIS VALUE. INSTEAD, CREATE A COMPLEX SECRET AND KEEP IT SAFE OUTSIDE OF THE SOURCE CODE.',
-          signOptions: { expiresIn: "60s"}
+          signOptions: { expiresIn: '60s' },
       }),
       AvatarModule
   ],
   controllers: [UserController],
-  providers: [JwtStrategy, UserService],
-    exports: [UserService, JwtModule],
+  providers: [UserService],
+  exports: [UserService],
 })
 export class UserModule {}

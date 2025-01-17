@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
+import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
 import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {User} from "./entities/user.entity";
@@ -7,6 +7,9 @@ import {JwtService} from "@nestjs/jwt";
 import * as bcrypt from 'bcrypt';
 import {Role} from "../entities/role.entity";
 import {CreateRole} from "./user.controller";
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { jwtConstants } from './user.module';
+import { AvatarService } from 'src/avatar/avatar.service';
 
 
 @Injectable()
@@ -17,6 +20,7 @@ export class UserService {
       @InjectRepository(Role)
       private readonly roleRepository: Repository<Role>,
       private readonly jwtService: JwtService,
+      private readonly avatarService: AvatarService
   ) {}
 
   async getByEmail(email: string) {
@@ -81,20 +85,29 @@ export class UserService {
     }
 
     const comparePassword = await bcrypt.compare(user.password, existingUser.password);
+    
     if(!comparePassword) {
       throw new BadRequestException("Неверное имя пользователя или пароль");
     }
 
     const payload = {sub: existingUser.id, email: user.email, role: existingUser.role};
+    
     return {
       access_token: await this.jwtService.signAsync(payload),
     }
   };
 
 
-  async login(user: User): Promise<{ access_token: string }> {
+  // async login(user: User): Promise<{ access_token: string }> {
+  async login(user: User): Promise<{ access_token: string, refresh_token: string }> {
+    
     const payload = { email: user.email, id: user.id };
-    return { access_token: this.jwtService.sign(payload) };
+    // return { access_token: this.jwtService.sign(payload) };
+
+    return { 
+      access_token: this.jwtService.sign(payload), 
+      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }), // Выдача refresh token на 7 дней 
+    };
   }
 
   async signUp(user: SignInDto) {
@@ -130,40 +143,110 @@ export class UserService {
 
 
 
-  async getProfile(id: string): Promise<{ user_name: string, bio: string, rating: number, email: string, avatar_id: any }> {
-    const {user_name, bio, rating, email, avatar_id} = await this.userRepository.findOne({
+  async getProfile(id: string): Promise<{ user_name: string, bio: string, rating: number, email: string, avatar_id: any, role: any }> {
+    const {user_name, bio, rating, email, avatar_id, role} = await this.userRepository.findOne({
       where: {
         id
       },
-      relations: ['avatar_id'],
+      relations: ['avatar_id', 'role'],
     });
-    return {user_name, bio, rating, email, avatar_id};
-  }
+    
+    return {
+      user_name, 
+      bio, 
+      rating, 
+      email, 
+      avatar_id,
+      role: role.role_name
+    };
+  };
 
 
 
 
+
+
+
+
+
+  async refreshToken(refreshTokenDto: RefreshTokenDto) { 
+    const { refresh_token } = refreshTokenDto; 
+    try { 
+      const payload = this.jwtService.verify(refresh_token, { 
+        secret: jwtConstants.secret 
+      }); 
+      console.log({ payload });
+      
+
+      const user = await this.findOneByUsername(payload.username); 
+      
+      if (!user) { 
+        throw new UnauthorizedException('User not found'); 
+      } 
+      
+      const newPayload = { username: user.user_name, sub: user.id, role: user.role }; 
+      
+      return { access_token: this.jwtService.sign(newPayload), }; 
+    } catch (e) { 
+      throw new UnauthorizedException('Invalid refresh token'); 
+    } 
+  };
+
+
+
+  async findOneByUsername(user_name: string) {
+    return await this.userRepository.findOne({
+      where: {
+        user_name
+      },
+      select: ['user_name', 'id', 'role']
+    });
+  };
 
 
 
 
 // добавить в параметры картинку в байтах
-  async updateSelectedDefaultAvatar(id: string, avatar_id: string): Promise<{ message: string }> {
+  async updateSelectedDefaultAvatar(id: string, avatar_id: string): Promise<{ message: string, status: string }> {
     // return {message: avatar_id};
     const user = await this.userRepository.findOne({
       where: { id }
     });
+
+    const avatar = await this.avatarService.getAvatarById(avatar_id);
+
     const result = await this.userRepository.save({
       ...user,
-      // avatar_id: avatar_id,
+      avatar_id: avatar
     })
+
     if(!result) {
       throw new BadRequestException("При обновлении фотографии пользователя возникла ошибка")
     }
+    
     return {
-      message: "ok"
+      message: "Аватарка успешно обновлена",
+      status: "ok"
     }
   }
+
+
+
+
+
+
+  async deleteSelectedDefaultAvatar(id: string) {
+    return (await this.userRepository.update(id, {
+      avatar_id: null
+    })).affected;
+  };
+
+
+
+
+
+
+
 
 
   async validateUser(username: string, password: string): Promise<any> {

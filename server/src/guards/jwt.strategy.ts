@@ -10,13 +10,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            // secretOrKey: jwtConstants.secret,
-            secretOrKey: 'DO NOT USE THIS VALUE. INSTEAD, CREATE A COMPLEX SECRET AND KEEP IT SAFE OUTSIDE OF THE SOURCE CODE.',
+            secretOrKey: jwtConstants.secret,
+            // secretOrKey: 'DO NOT USE THIS VALUE. INSTEAD, CREATE A COMPLEX SECRET AND KEEP IT SAFE OUTSIDE OF THE SOURCE CODE.',
         });
     }
 
     async validate(payload: any) {
-        console.log({ payload });
         return { userId: payload.sub, username: payload.username, role: payload.role };
     }
 }

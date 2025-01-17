@@ -7,7 +7,10 @@ import {
   Param,
   ValidationPipe,
   UsePipes,
-  UseGuards
+  UseGuards,
+  Request,
+  Req,
+  Delete
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -18,7 +21,8 @@ import {Roles} from "../guards/roles.decorator";
 import {RolesGuard} from "../guards/roles.guard";
 import {JwtAuthGuard} from "../guards/jwt.guard";
 import {roles} from "../enums/roles.enum";
-import {AuthGuard} from "@nestjs/passport";
+import { AuthGuard } from 'src/guards/auth.guard';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 
 export class CreateRole {
@@ -41,17 +45,18 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
 
+  // @ApiSecurity('JWT-auth')
+  // @UseGuards(AuthGuard, RolesGuard)
+  // @Roles(roles.USER, roles.ADMIN)
+  // @Get(":id")
+  // async getProfile(@Param('id') id: string) {
+  //   return this.userService.getUser(id);
+  // }
+
+
   @ApiSecurity('JWT-auth')
-  @UseGuards(JwtAuthGuard)
-  @Get(":id")
-  // @UseGuards(RolesGuard)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(roles.ADMIN)
-  async getUser(@Param('id') id: string) {
-    return this.userService.getUser(id);
-  }
-
-
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(roles.USER, roles.ADMIN)
   @Post("add-role")
   async addDefaultRoles(@Body() body: CreateRole) {
     return this.userService.addDefaultRoles(body.role_name);
@@ -78,8 +83,8 @@ export class UserController {
   }
 
   @Post("login")
-  async login(@Body() body: CreateAuthDto) {
-
+  async login(@Request() req) {
+    return this.userService.login(req.user);
   }
 
   @Post("logout")
@@ -92,15 +97,21 @@ export class UserController {
 
   };
 
-  @Post("refreshToken")
-  async refreshToken(@Body() body: CreateAuthDto) {
-
+  @Post('refresh-token') 
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) { 
+    return this.userService.refreshToken(refreshTokenDto); 
   }
+
+
 
   @Get('profile/:id')
   async getProfile(@Param('id') id: string) {
     return this.userService.getProfile(id);
   }
+
+
+
+
 
 
   // выбрать default avatar
@@ -110,6 +121,21 @@ export class UserController {
   }
 
 
+
+  @Delete("delete-avatar/:id/:avatar_id")
+  async deleteSelectedDefaultAvatar(@Param("id") id: string) {
+    const deletedResult = this.userService.deleteSelectedDefaultAvatar(id);
+    if(!deletedResult) {
+      return {
+        message: "Удаление аватарки произошло с ошибкой",
+        status: 401
+      }
+    }
+    return {
+      message: "Удаление прошло успешно",
+      status: "ok"
+    }
+  }
 
 
 };
