@@ -1,19 +1,19 @@
+import { PostEntity } from 'src/post/entities/post.entity';
+import { User } from 'src/user/entities/user.entity';
 import {Entity, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn} from 'typeorm';
-import {PostEntity} from "../post/entities/post.entity";
-import {User} from "../user/entities/user.entity";
 
-@Entity('saved_posts')
-export class SavedPost {
+@Entity('likes')
+export class LikeEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => User, user => user.savedPosts)
+    @ManyToOne(() => User, user => user.likes)
     @JoinColumn({
-        name: "user_id",
+        name: "user_id"
     })
     user: User;
 
-    @ManyToOne(() => PostEntity, post => post.savedPosts)
+    @ManyToOne(() => PostEntity, post => post.likes)
     @JoinColumn({
         name: "post_id"
     })

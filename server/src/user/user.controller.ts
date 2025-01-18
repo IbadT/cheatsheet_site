@@ -23,6 +23,7 @@ import {JwtAuthGuard} from "../guards/jwt.guard";
 import {roles} from "../enums/roles.enum";
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SignUpApiDocs } from './decorators/sign-up.decorator';
 
 
 export class CreateRole {
@@ -45,6 +46,11 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
 
+  @Get("admin")
+  async getAdmin() {
+    return this.userService.getAdmin();
+  }
+
   // @ApiSecurity('JWT-auth')
   // @UseGuards(AuthGuard, RolesGuard)
   // @Roles(roles.USER, roles.ADMIN)
@@ -64,8 +70,18 @@ export class UserController {
 
 
   @Patch("update-user-role/:id/:role_id")
-  async updateUserRole(@Param('id') id: string, @Param('role_id') role_id: string) {
-    return this.userService.updateUserRole(id, role_id);
+  async updateUserRole(@Param('id') id: string, @Param('role_id') role_id: string): Promise<{ status: string, message: string }> {
+    const response = this.userService.updateUserRole(id, role_id);
+    if(!response) {
+      return {
+        status: "error",
+        message: "Ошибка при обновлении роли"
+      }
+    };
+    return {
+      status: "ok",
+      message: "Роль успешно обновлена"
+    }
   }
 
 
@@ -76,7 +92,7 @@ export class UserController {
     return this.userService.signIn(body);
   }
 
-
+  @SignUpApiDocs()
   @Post("signUp")
   async signUp(@Body() body: SignInDto) {
     return this.userService.signUp(body);

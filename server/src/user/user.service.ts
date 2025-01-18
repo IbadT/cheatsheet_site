@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException, UnauthorizedException} from '@nestjs/common';
 import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {User} from "./entities/user.entity";
@@ -10,6 +10,7 @@ import {CreateRole} from "./user.controller";
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { jwtConstants } from './user.module';
 import { AvatarService } from 'src/avatar/avatar.service';
+import { roles } from 'src/enums/roles.enum';
 
 
 @Injectable()
@@ -22,6 +23,29 @@ export class UserService {
       private readonly jwtService: JwtService,
       private readonly avatarService: AvatarService
   ) {}
+
+
+  async getAdmin() {
+    const role = await this.roleRepository.findOne({
+      where: {
+        role_name: roles.ADMIN
+      }
+    });
+    
+    if (!role) { 
+      throw new NotFoundException('Роль "ADMIN" не найдена'); 
+    };
+    
+    return await this.userRepository.findOne({ 
+      where: {
+        role: {
+          id: role.id
+        }
+      },
+      relations: ['role']
+    });
+  }
+
 
   async getByEmail(email: string) {
     return await this.userRepository.findOne({
@@ -63,13 +87,10 @@ export class UserService {
       }
     })
 
-    return await this.userRepository.update(id, {
+    return (await this.userRepository.update(id, {
       role
-    })
+    })).affected
   };
-
-
-
 
 
   async signIn(user: SignInDto) {
@@ -127,7 +148,6 @@ export class UserService {
       }
     });
 
-
     const hashedPassword = await bcrypt.hash(user.password, 10);
 
     const newUser = {
@@ -135,7 +155,7 @@ export class UserService {
       role,
       password: hashedPassword,
     };
-
+    
     const createdUser = this.userRepository.create(newUser);
     await this.userRepository.save(createdUser);
     return this.login(createdUser);
@@ -149,15 +169,15 @@ export class UserService {
         id
       },
       relations: ['avatar_id', 'role'],
-    });
+    });   
     
     return {
       user_name, 
       bio, 
       rating, 
       email, 
-      avatar_id,
-      role: role.role_name
+      avatar_id: avatar_id ? avatar_id.id : null,
+      role
     };
   };
 

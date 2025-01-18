@@ -5,6 +5,7 @@ export class SignInDto {
     @ApiProperty({
         type: String,
         required: true,
+        example: "ibadtoff@gmail.com",
         description: 'Email',
     })
     @IsNotEmpty()
@@ -14,7 +15,8 @@ export class SignInDto {
     @ApiProperty({
         type: String,
         required: true,
-        description: 'user_name',
+        example: 'ibadt',
+        description: 'Имя пользователя',
     })
     @IsNotEmpty()
     @IsString()
@@ -23,7 +25,8 @@ export class SignInDto {
     @ApiProperty({
         type: String,
         required: true,
-        description: 'Password',
+        example: 'gts530200',
+        description: 'Пароль',
     })
     // @IsStrongPassword()
     @IsString()

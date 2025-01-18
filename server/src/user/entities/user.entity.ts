@@ -2,6 +2,8 @@ import {
     Column,
     CreateDateColumn,
     Entity, JoinColumn,
+    ManyToMany,
+    ManyToOne,
     OneToMany, OneToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn
@@ -12,8 +14,8 @@ import {Role} from "../../entities/role.entity";
 import {PostEntity} from "../../post/entities/post.entity";
 import {SavedPost} from "../../entities/saved-post.entity";
 import {LikeEntity} from "../../entities/like.entity";
-import {CommentEntity} from "../../entities/comment.entity";
 import {FriendEntity} from "../../friend/entities/friend.entity";
+import { CommentEntity } from "src/comment/entities/comment.entity";
 
 
 
@@ -28,9 +30,8 @@ export class User {
     id: string;
 
 
-
     @Column("varchar",{
-        // unique: true,
+        unique: true,
     })
     user_name: string;
 
@@ -85,10 +86,8 @@ export class User {
 
 
 
-    @OneToOne(() => Role)
-    @JoinColumn({
-        name: 'role_id' }
-    )
+    @ManyToOne(() => Role, role => role.users) 
+    @JoinColumn({ name: 'role_id' }) 
     role: Role;
 
     @CreateDateColumn({
