@@ -23,17 +23,27 @@ export class PostService {
   )
   {}
 
-  async getAllPostFromAdmin() {
+  async getAllPostFromAdmin(page: number, limit: number) {
     const admin = await this.userService.getAdmin();
-    const adminPost = await this.postRepository.find({
+    const [data, total] = await this.postRepository.findAndCount({
       where: {
         user: {
-          id: admin.id
+          id: admin.id,
+
         }
       },
+      skip: (page-1) * limit,
+      take: limit,
       relations: ['likes', 'comments', 'user'],
+      order: {
+        created_at: "DESC"
+      }
     })
-
+    // return {
+    //   data, // [{ id, title, text, createdAt, updatedAt }]
+    //   total // 2
+    // }
+    
     // const adminPosts = await this.postRepository.createQueryBuilder('post')
     //   .leftJoinAndSelect('post.likes', 'likes')
     //   .leftJoinAndSelect('post.comments', 'comments')
@@ -41,20 +51,23 @@ export class PostService {
     //   .addSelect(['user.id'])
     //   .where('user.id = :userId', { userId: admin.id })
     //   .getMany();
-
-
-
-    const allPosts = await adminPost.map(post => {
+    
+    
+    
+    // получить пост(author(avarat, user_name), post, likes(колличество), saved(колличество), comments(колличество, authors))
+    const allPosts = data.map(post => {
       const likesCount = post.likes.length;
       const commentsCount = post.comments.length;
       return {
         ...post,
         likes: likesCount,
         comments: commentsCount,
+        // savedPosts:
         user: {
           user_name: post.user.user_name,
           rating: post.user.rating,
-          bio: post.user.bio
+          bio: post.user.bio,
+          avatar_id: post.user.avatar_id
         }
       }
 

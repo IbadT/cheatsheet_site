@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -17,12 +17,6 @@ import { ApiTags } from '@nestjs/swagger';
 // для админа посмотреть, кто лайкнул
 // для админа посмотреть, кто написал сообщение и какое написал сообщение
 
-// получить все посты(только от ADMIN)
-// добавить пост админу
-// получить пост по id
-// изменить пост по id
-// удалить пост
-
 
 
 
@@ -38,8 +32,11 @@ export class PostController {
   ) {}
 
   @Get()
-  async getAllPostFromAdmin() {
-    return this.postService.getAllPostFromAdmin();
+  async getAllPostFromAdmin(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10
+  ) {
+    return this.postService.getAllPostFromAdmin(page, limit);
   };
 
   
