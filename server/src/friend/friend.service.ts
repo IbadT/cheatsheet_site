@@ -80,9 +80,10 @@ export class FriendService {
 
 
 
-  async sendFriendRequest(requesterId: string, addresseeId: string): Promise<{ status: number, message: string }> {
-    const requester = await this.userRepository.findOne({ where: { id: requesterId }});
-    const addressee = await this.userRepository.findOne({ where: { id: addresseeId } });
+  async sendFriendRequest(requester_id: string, addressee_id: string): Promise<{ status: number, message: string }> {
+    // const requester = await this.userRepository.findOne({ where: { id: requesterId }});
+    // const addressee = await this.userRepository.findOne({ where: { id: addresseeId } });
+    const { requester, addressee } = await this.getRequesterAndAddressee(requester_id, addressee_id);
 
     if (!requester || !addressee) {
       throw new Error('Requester or addressee not found');
@@ -116,9 +117,10 @@ export class FriendService {
 
 
 
-  async acceptFriendRequest(requesterId: string, addresseeId): Promise<{ status: number, message: string }> {
-    const requester = await this.userService.getUser(requesterId);
-    const addressee = await this.userService.getUser(addresseeId);
+  async acceptFriendRequest(requester_id: string, addressee_id: string): Promise<{ status: number, message: string }> {
+    // const requester = await this.userService.getUser(requesterId);
+    // const addressee = await this.userService.getUser(addresseeId);
+    const { requester, addressee } = await this.getRequesterAndAddressee(requester_id, addressee_id);
 
     const friendRequest = await this.friendRepository.findOne({ 
       where: { 
@@ -145,12 +147,14 @@ export class FriendService {
 
 
 
-  async removeFromFriend(requesterId: string, addresseeId: string) {
+  async removeFromFriend(requester_id: string, addressee_id: string) {
     // const requester = await this.userRepository.findOne({ where: { id: requesterId }});
     // const addressee = await this.userRepository.findOne({ where: { id: addresseeId } });
 
-    const requester = await this.userService.getUser(requesterId);
-    const addressee = await this.userService.getUser(addresseeId);
+    // const requester = await this.userService.getUser(requesterId);
+    // const addressee = await this.userService.getUser(addresseeId);
+
+    const { requester, addressee } = await this.getRequesterAndAddressee(requester_id, addressee_id);
 
     const findThisFriend = await this.friendRepository.findOne({
       where: {
@@ -174,8 +178,9 @@ export class FriendService {
 
 
   async removeUserFromFriendRequestList(requester_id: string, addressee_id: string) {
-    const requester = await this.userService.getUser(requester_id);
-    const addressee = await this.userService.getUser(addressee_id);
+    // const requester = await this.userService.getUser(requester_id);
+    // const addressee = await this.userService.getUser(addressee_id);
+    const { requester, addressee } = await this.getRequesterAndAddressee(requester_id, addressee_id);
 
     const requestForRemove = await this.friendRepository.findOne({
       where: {
@@ -198,4 +203,19 @@ export class FriendService {
       message: "Запрос успешно удален"
     }
   }
+
+
+
+
+
+
+  async getRequesterAndAddressee(requester_id: string, addressee_id: string) {
+    const requester = await this.userService.getUser(requester_id);
+    const addressee = await this.userService.getUser(addressee_id);
+    return {
+      requester,
+      addressee
+    }
+  }
+
 }
