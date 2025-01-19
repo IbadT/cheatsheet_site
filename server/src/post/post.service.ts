@@ -9,7 +9,6 @@ import { Role } from 'src/entities/role.entity';
 import { roles } from 'src/enums/roles.enum';
 // import { Like } from 'src/like/entities/like.entity';
 // import { Comment } from 'src/comment/entities/comment.entity';
-import { Saved } from 'src/saved/entities/saved.entity';
 import { LikeEntity } from 'src/entities/like.entity';
 import { SavedPost } from 'src/entities/saved-post.entity';
 import { UserService } from 'src/user/user.service';

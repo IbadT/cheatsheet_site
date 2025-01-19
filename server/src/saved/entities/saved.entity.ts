@@ -1,1 +1,36 @@
-export class Saved {}
+import { PostEntity } from 'src/post/entities/post.entity';
+import { User } from 'src/user/entities/user.entity';
+import {Entity, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn} from 'typeorm';
+
+@Entity('saved_posts')
+export class SavedPostEntity {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @ManyToOne(() => User, user => user.savedPosts)
+    @JoinColumn({
+        name: "user_id",
+    })
+    user: User;
+
+    @ManyToOne(() => PostEntity, post => post.savedPosts)
+    @JoinColumn({
+        name: "post_id"
+    })
+    post: PostEntity;
+
+
+
+    @CreateDateColumn({
+        type: "timestamp",
+        default: () => "CURRENT_TIMESTAMP(6)"
+    })
+    created_at: Date;
+
+    @UpdateDateColumn({
+        type: "timestamp",
+        default: () => "CURRENT_TIMESTAMP(6)",
+        onUpdate: "CURRENT_TIMESTAMP(6)",
+    })
+    updated_at: Date;
+}
