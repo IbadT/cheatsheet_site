@@ -16,15 +16,15 @@ export class FriendEntity {
 
 
     @ManyToOne(() => User, user => user.sentFriendRequests)
-    // @JoinColumn({
-    //     name: "requester_id"
-    // })
+    @JoinColumn({
+        name: "requester_id"
+    })
     requester: User;
 
     @ManyToOne(() => User, user => user.receivedFriendRequests)
-    // @JoinColumn({
-    //     name: "addressee_id"
-    // })
+    @JoinColumn({
+        name: "addressee_id"
+    })
     addressee: User;
 
     @Column('boolean', { default: false })

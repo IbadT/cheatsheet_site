@@ -10,6 +10,10 @@ import {ApiTags} from "@nestjs/swagger";
 // по id одобрить запрос в дурзья
 // получить всех друзей
 
+// # ДРУЗЬЯ
+// возможность добавить в друзья
+// просмотреть всех своих друзей
+
 @ApiTags('Friend')
 @Controller('friend')
 export class FriendController {
@@ -18,6 +22,12 @@ export class FriendController {
   @Get("get-friends/:id")
   async getFriends(@Param("id") id: string) {
     return this.friendService.getFriends(id);
+  }
+
+
+  @Get(":id")
+  async getAllFriendRequests(@Param('id') id: string) {
+    return this.friendService.getAllFriendRequests(id);
   }
 
 
@@ -30,9 +40,21 @@ export class FriendController {
   };
 
 
-  @Post('accept/:requestId')
-  async acceptFriendRequest(@Param('requestId') requestId: string) {
-    return this.friendService.acceptFriendRequest(requestId);
+  @Post('accept/:request_id/:addressee_id')
+  async acceptFriendRequest(@Param('request_id') request_id: string, @Param('addressee_id') addressee_id: string) {
+    return this.friendService.acceptFriendRequest(request_id, addressee_id);
+  };
+
+
+  @Patch(":requester_id/:addressee_id")
+  async removeFromFriend(@Param('requester_id') requester_id: string, @Param('adressee_id') addressee_id: string) {
+    return this.friendService.removeFromFriend(requester_id, addressee_id);
+  };
+
+
+  @Delete(":requester_id/:addressee_id")
+  async removeUserFromFriendRequestList(@Param('requester_id') requester_id: string, @Param('addressee_id') addressee_id: string) {
+    return this.friendService.removeUserFromFriendRequestList(requester_id, addressee_id)
   }
 
 }
