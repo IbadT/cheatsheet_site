@@ -11,7 +11,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/server" />
     <option name="ROOT_SYNC" value="SYNC" />
   </component>
   <component name="ProblemsViewState">
@@ -64,7 +64,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1736401656009</updated>
-      <workItem from="1736401657402" duration="90733000" />
+      <workItem from="1736401657402" duration="101189000" />
     </task>
     <servers />
   </component>

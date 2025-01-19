@@ -1,3 +1,5 @@
+import { PostEntity } from 'src/post/entities/post.entity';
+import { User } from 'src/user/entities/user.entity';
 import {
     Entity,
     PrimaryGeneratedColumn,
@@ -7,8 +9,6 @@ import {
     UpdateDateColumn,
     JoinColumn
 } from 'typeorm';
-import {PostEntity} from "../post/entities/post.entity";
-import {User} from "../user/entities/user.entity";
 
 
 @Entity('comments')

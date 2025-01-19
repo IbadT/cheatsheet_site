@@ -1,9 +1,29 @@
-import {Controller, Get, Post, Body, Patch, Param, Delete, Query, ValidationPipe, UsePipes} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  ValidationPipe,
+  UsePipes,
+  UseGuards,
+  Request,
+  Req,
+  Delete
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import {SignInDto} from "./dto/signin.dto";
-import {ApiProperty, ApiTags} from "@nestjs/swagger";
+import {ApiProperty, ApiSecurity, ApiTags} from "@nestjs/swagger";
 import {IsNotEmpty, IsString} from "class-validator";
+import {Roles} from "../guards/roles.decorator";
+import {RolesGuard} from "../guards/roles.guard";
+import {JwtAuthGuard} from "../guards/jwt.guard";
+import {roles} from "../enums/roles.enum";
+import { AuthGuard } from 'src/guards/auth.guard';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SignUpApiDocs } from './decorators/sign-up.decorator';
 
 
 export class CreateRole {
@@ -25,12 +45,24 @@ export class CreateRole {
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get(":id")
-  async getUser(@Param('id') id: string) {
-    return this.userService.getUser(id);
+
+  @Get("admin")
+  async getAdmin() {
+    return this.userService.getAdmin();
   }
 
+  // @ApiSecurity('JWT-auth')
+  // @UseGuards(AuthGuard, RolesGuard)
+  // @Roles(roles.USER, roles.ADMIN)
+  // @Get(":id")
+  // async getProfile(@Param('id') id: string) {
+  //   return this.userService.getUser(id);
+  // }
 
+
+  @ApiSecurity('JWT-auth')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(roles.USER, roles.ADMIN)
   @Post("add-role")
   async addDefaultRoles(@Body() body: CreateRole) {
     return this.userService.addDefaultRoles(body.role_name);
@@ -38,8 +70,18 @@ export class UserController {
 
 
   @Patch("update-user-role/:id/:role_id")
-  async updateUserRole(@Param('id') id: string, @Param('role_id') role_id: string) {
-    return this.userService.updateUserRole(id, role_id);
+  async updateUserRole(@Param('id') id: string, @Param('role_id') role_id: string): Promise<{ status: string, message: string }> {
+    const response = this.userService.updateUserRole(id, role_id);
+    if(!response) {
+      return {
+        status: "error",
+        message: "Ошибка при обновлении роли"
+      }
+    };
+    return {
+      status: "ok",
+      message: "Роль успешно обновлена"
+    }
   }
 
 
@@ -50,15 +92,15 @@ export class UserController {
     return this.userService.signIn(body);
   }
 
-
+  @SignUpApiDocs()
   @Post("signUp")
   async signUp(@Body() body: SignInDto) {
     return this.userService.signUp(body);
   }
 
   @Post("login")
-  async login(@Body() body: CreateAuthDto) {
-
+  async login(@Request() req) {
+    return this.userService.login(req.user);
   }
 
   @Post("logout")
@@ -71,15 +113,21 @@ export class UserController {
 
   };
 
-  @Post("refreshToken")
-  async refreshToken(@Body() body: CreateAuthDto) {
-
+  @Post('refresh-token') 
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) { 
+    return this.userService.refreshToken(refreshTokenDto); 
   }
+
+
 
   @Get('profile/:id')
   async getProfile(@Param('id') id: string) {
     return this.userService.getProfile(id);
   }
+
+
+
+
 
 
   // выбрать default avatar
@@ -89,6 +137,21 @@ export class UserController {
   }
 
 
+
+  @Delete("delete-avatar/:id/:avatar_id")
+  async deleteSelectedDefaultAvatar(@Param("id") id: string) {
+    const deletedResult = this.userService.deleteSelectedDefaultAvatar(id);
+    if(!deletedResult) {
+      return {
+        message: "Удаление аватарки произошло с ошибкой",
+        status: 401
+      }
+    }
+    return {
+      message: "Удаление прошло успешно",
+      status: "ok"
+    }
+  }
 
 
 };

@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, CreateDateColumn, UpdateDateColumn} from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, OneToOne, CreateDateColumn, UpdateDateColumn, ManyToOne, ManyToMany, OneToMany} from 'typeorm';
 import { IsUUID } from 'class-validator';
 import {User} from "../user/entities/user.entity";
 
@@ -17,8 +17,13 @@ export class Role {
     })
     role_name: string;
 
-    @OneToOne(() => User, (user) => user.role)
-    user: User;
+    // @OneToOne(() => User, (user) => user.role)
+    // user: User;
+
+    @OneToMany(() => User, user => user.role) 
+    users: User[];
+
+
 
     @CreateDateColumn({
         type: "timestamp",

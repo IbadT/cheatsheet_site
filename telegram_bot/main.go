@@ -1,5 +1,9 @@
-import fmt
+package main
+
+import (
+	"fmt"
+)
 
 func main() {
-    fmt.printLn("Привет телеграм бот")
+	fmt.Println("Привет телеграм бот")
 }

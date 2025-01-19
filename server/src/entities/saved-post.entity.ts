@@ -13,8 +13,11 @@ export class SavedPost {
     })
     user: User;
 
-    // @ManyToOne(() => PostEntity, post => post.savedPosts)
-    // post: PostEntity;
+    @ManyToOne(() => PostEntity, post => post.savedPosts)
+    @JoinColumn({
+        name: "post_id"
+    })
+    post: PostEntity;
 
 
 

@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException, UnauthorizedException} from '@nestjs/common';
 import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {User} from "./entities/user.entity";
@@ -7,6 +7,10 @@ import {JwtService} from "@nestjs/jwt";
 import * as bcrypt from 'bcrypt';
 import {Role} from "../entities/role.entity";
 import {CreateRole} from "./user.controller";
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { jwtConstants } from './user.module';
+import { AvatarService } from 'src/avatar/avatar.service';
+import { roles } from 'src/enums/roles.enum';
 
 
 @Injectable()
@@ -17,7 +21,39 @@ export class UserService {
       @InjectRepository(Role)
       private readonly roleRepository: Repository<Role>,
       private readonly jwtService: JwtService,
+      private readonly avatarService: AvatarService
   ) {}
+
+
+  async getAdmin() {
+    const role = await this.roleRepository.findOne({
+      where: {
+        role_name: roles.ADMIN
+      }
+    });
+    
+    if (!role) { 
+      throw new NotFoundException('Роль "ADMIN" не найдена'); 
+    };
+    
+    return await this.userRepository.findOne({ 
+      where: {
+        role: {
+          id: role.id
+        }
+      },
+      relations: ['role']
+    });
+  }
+
+
+  async getByEmail(email: string) {
+    return await this.userRepository.findOne({
+      where: { email }
+    })
+  }
+
+
 
   async getUser(id: string) {
     return await this.userRepository.findOne({
@@ -45,20 +81,24 @@ export class UserService {
       throw new BadRequestException(`Пользователя с id: ${id} не существует`)
     }
 
-    // return this.userRepository.update(id, {
-    //   role_id
-    // })
-  }
+    const role = await this.roleRepository.findOne({
+      where: {
+        id: role_id
+      }
+    })
 
-
-
+    return (await this.userRepository.update(id, {
+      role
+    })).affected
+  };
 
 
   async signIn(user: SignInDto) {
     const existingUser = await this.userRepository.findOne({
       where: {
         email: user.email,
-      }
+      },
+      relations: ['role'],
     });
 
     if(!existingUser) {
@@ -66,20 +106,29 @@ export class UserService {
     }
 
     const comparePassword = await bcrypt.compare(user.password, existingUser.password);
+    
     if(!comparePassword) {
       throw new BadRequestException("Неверное имя пользователя или пароль");
     }
 
-    const payload = {sub: existingUser.id, email: user.email};
+    const payload = {sub: existingUser.id, email: user.email, role: existingUser.role};
+    
     return {
       access_token: await this.jwtService.signAsync(payload),
     }
   };
 
 
-  async login(user: User): Promise<{ access_token: string }> {
+  // async login(user: User): Promise<{ access_token: string }> {
+  async login(user: User): Promise<{ access_token: string, refresh_token: string }> {
+    
     const payload = { email: user.email, id: user.id };
-    return { access_token: this.jwtService.sign(payload) };
+    // return { access_token: this.jwtService.sign(payload) };
+
+    return { 
+      access_token: this.jwtService.sign(payload), 
+      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }), // Выдача refresh token на 7 дней 
+    };
   }
 
   async signUp(user: SignInDto) {
@@ -99,7 +148,6 @@ export class UserService {
       }
     });
 
-
     const hashedPassword = await bcrypt.hash(user.password, 10);
 
     const newUser = {
@@ -107,9 +155,7 @@ export class UserService {
       role,
       password: hashedPassword,
     };
-
-    console.log(newUser)
-
+    
     const createdUser = this.userRepository.create(newUser);
     await this.userRepository.save(createdUser);
     return this.login(createdUser);
@@ -117,14 +163,91 @@ export class UserService {
 
 
 
-  async getProfile(id: string): Promise<{ user_name: string, bio: string, rating: number, email: string, avatar_id: any }> {
-    const {user_name, bio, rating, email, avatar_id} = await this.userRepository.findOne({
+  async getProfile(id: string): Promise<{ user_name: string, bio: string, rating: number, email: string, avatar_id: any, role: any }> {
+    const {user_name, bio, rating, email, avatar_id, role} = await this.userRepository.findOne({
       where: {
         id
       },
-      relations: ['avatar_id'],
+      relations: ['avatar_id', 'role'],
+    });   
+    
+    return {
+      user_name, 
+      bio, 
+      rating, 
+      email, 
+      avatar_id: avatar_id ? avatar_id.id : null,
+      role
+    };
+  };
+
+
+
+
+
+
+
+
+
+  async refreshToken(refreshTokenDto: RefreshTokenDto) { 
+    const { refresh_token } = refreshTokenDto; 
+    try { 
+      const payload = this.jwtService.verify(refresh_token, { 
+        secret: jwtConstants.secret 
+      }); 
+      console.log({ payload });
+      
+
+      const user = await this.findOneByUsername(payload.username); 
+      
+      if (!user) { 
+        throw new UnauthorizedException('User not found'); 
+      } 
+      
+      const newPayload = { username: user.user_name, sub: user.id, role: user.role }; 
+      
+      return { access_token: this.jwtService.sign(newPayload), }; 
+    } catch (e) { 
+      throw new UnauthorizedException('Invalid refresh token'); 
+    } 
+  };
+
+
+
+  async findOneByUsername(user_name: string) {
+    return await this.userRepository.findOne({
+      where: {
+        user_name
+      },
+      select: ['user_name', 'id', 'role']
     });
-    return {user_name, bio, rating, email, avatar_id};
+  };
+
+
+
+
+// добавить в параметры картинку в байтах
+  async updateSelectedDefaultAvatar(id: string, avatar_id: string): Promise<{ message: string, status: string }> {
+    // return {message: avatar_id};
+    const user = await this.userRepository.findOne({
+      where: { id }
+    });
+
+    const avatar = await this.avatarService.getAvatarById(avatar_id);
+
+    const result = await this.userRepository.save({
+      ...user,
+      avatar_id: avatar
+    })
+
+    if(!result) {
+      throw new BadRequestException("При обновлении фотографии пользователя возникла ошибка")
+    }
+    
+    return {
+      message: "Аватарка успешно обновлена",
+      status: "ok"
+    }
   }
 
 
@@ -132,24 +255,31 @@ export class UserService {
 
 
 
+  async deleteSelectedDefaultAvatar(id: string) {
+    return (await this.userRepository.update(id, {
+      avatar_id: null
+    })).affected;
+  };
 
 
-// добавить в параметры картинку в байтах
-  async updateSelectedDefaultAvatar(id: string, avatar_id: string): Promise<{ message: string }> {
-    return {message: avatar_id};
+
+
+
+
+
+
+
+  async validateUser(username: string, password: string): Promise<any> {
     const user = await this.userRepository.findOne({
-      where: { id }
+      where: { user_name: username },
+      relations: ['role']
     });
-    const result = await this.userRepository.save({
-      ...user,
-      // avatar_id: avatar_id,
-    })
-    if(!result) {
-      throw new BadRequestException("При обновлении фотографии пользователя возникла ошибка")
+
+    if (user && await bcrypt.compare(password, user.password)) {
+      const { password, ...result } = user;
+      return result;
     }
-    return {
-      message: "ok"
-    }
+    return null;
   }
 
 }

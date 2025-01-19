@@ -6,11 +6,13 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {DatabaseModule} from "../database/database.module";
 import {JwtModule} from "@nestjs/jwt";
 import {Role} from "../entities/role.entity";
-import {AvatarService} from "../avatar/avatar.service";
 import {AvatarModule} from "../avatar/avatar.module";
 import {LikeEntity} from "../entities/like.entity";
 import {SavedPost} from "../entities/saved-post.entity";
 import {FriendEntity} from "../friend/entities/friend.entity";
+import {PassportModule} from "@nestjs/passport";
+import {LocalStrategy} from "../guards/local.strategy";
+import {JwtStrategy} from "../guards/jwt.strategy";
 
 
 export const jwtConstants = {
@@ -22,15 +24,16 @@ export const jwtConstants = {
   imports: [
       TypeOrmModule.forFeature([User, Role, LikeEntity, SavedPost, FriendEntity]),
       DatabaseModule,
+      PassportModule,
       JwtModule.register({
-          global: true,
+        //   global: true,
           secret: jwtConstants.secret,
-          signOptions: { expiresIn: "60s"}
+          signOptions: { expiresIn: '60s' },
       }),
       AvatarModule
   ],
   controllers: [UserController],
   providers: [UserService],
-    exports: [UserService],
+  exports: [UserService],
 })
 export class UserModule {}

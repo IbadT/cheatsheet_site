@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToOne} from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn} from 'typeorm';
 import {User} from "../../user/entities/user.entity";
 
 
@@ -10,12 +10,15 @@ export class Avatar {
     })
     id: string;
 
-    @Column('varchar', {
-        nullable: false,
-    })
-    avatar: string;
+    
+    @Column('bytea', { nullable: false })
+    avatar: Buffer; 
+    
 
-    @OneToOne(() => User, (user) => user.role)
+    @OneToOne(() => User, (user) => user.avatar_id) 
+    @JoinColumn({
+        name: "user_id"
+    })
     user: User;
 
 
