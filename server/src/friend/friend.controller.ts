@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseFilters } from '@nestjs/common';
 import { FriendService } from './friend.service';
-import { CreateFriendDto } from './dto/create-friend.dto';
-import { UpdateFriendDto } from './dto/update-friend.dto';
 import {ApiTags} from "@nestjs/swagger";
+import { HandleExceptionsFilter } from 'src/filters/handle-exception.filter';
 
 
 // отправить запрос в друзья
@@ -15,6 +14,7 @@ import {ApiTags} from "@nestjs/swagger";
 // просмотреть всех своих друзей
 
 @ApiTags('Friend')
+@UseFilters(HandleExceptionsFilter)
 @Controller('friend')
 export class FriendController {
   constructor(private readonly friendService: FriendService) {}
