@@ -11,6 +11,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { jwtConstants } from './user.module';
 import { AvatarService } from 'src/avatar/avatar.service';
 import { roles } from 'src/enums/roles.enum';
+import { ForgotPassword } from './dto/forgot-password.dto';
 
 
 @Injectable()
@@ -54,6 +55,31 @@ export class UserService {
   }
 
 
+  async getByUserName(user_name: string) {
+    return await this.userRepository.findOne({
+      where: { user_name }
+    })
+  }
+
+
+  async editPassword(user: User) {
+    const newPassword = this.generateRandomPassword();
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    return await this.userRepository.update(user.id, { password: hashedPassword })
+  }
+
+  generateRandomPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let password = '';
+    for (let i = 0; i < 10; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+
+
 
   async getUser(id: string) {
     return await this.userRepository.findOne({
@@ -63,6 +89,18 @@ export class UserService {
       relations: ['role'],
     })
   }
+
+
+
+  async forgotPassword(body: ForgotPassword) {
+    const existingUser = await this.getByEmail(body.email_or_username);
+    if(!existingUser) {
+
+    }
+  }
+
+
+
 
 
   async addDefaultRoles(roleName: string) {

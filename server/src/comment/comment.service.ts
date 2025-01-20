@@ -17,6 +17,18 @@ export class CommentService {
     private readonly postService: PostService
   ) {}
 
+  async watchWhoWriteCommentsToPost(post_id) {
+    const post = await this.postService.getOnlyPost(post_id);
+    return await this.commentRepository.find({
+      where: {
+        post: {
+          id: post.id
+        }
+      },
+      relations: ['user']
+    });
+  }
+
 
   async addCommentToPost(body: CreateCommentToPostDto) {
     const user = await this.userService.getUser(body.user_id);
