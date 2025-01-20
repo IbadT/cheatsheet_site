@@ -21,6 +21,16 @@ export class Avatar {
     })
     user: User;
 
+    @Column('varchar', {
+        default: null
+    })
+    mimetype: string
+
+    @Column('varchar', {
+        default: null
+    })
+    filename: string
+
 
     @CreateDateColumn({
         type: "timestamp",

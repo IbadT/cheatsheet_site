@@ -14,25 +14,13 @@ export class AvatarService {
   ) {}
 
 
-  async uploadFile(data: Buffer) {
-    // const filePath = Buffer.from(data.buffer).toString('base64')
-
-    // const fileBase64 = data.toString('base64');
+  async uploadFile(data: Buffer, mimetype: string, filename: string) {
     const result = this.avatarRepository.create({
-      avatar: Buffer.from(data.buffer)
+      avatar: Buffer.from(data.buffer),
+      mimetype,
+      filename
     })
     return await this.avatarRepository.save(result);
-
-    // return this.prisma.file.create({
-    //     data: {
-    //         filename,
-    //         mimetype,
-    //         size,
-    //         // data: Buffer.from(fileBase64, 'base64'),
-    //         // data: Buffer.from(filePath),
-    //         data: Buffer.from(data.buffer), // img
-    //     },
-    // });
 }
 
 
@@ -86,24 +74,6 @@ async uploadImage(fileId: string, width: number, height: number) {
   };
 
 
-  async isValidImageSignature(fileSignature: string, mimeType: string) {
-    // Для JPEG проверяем сигнатуру "FF D8 FF"
-    if (mimeType === 'image/jpeg' && fileSignature.startsWith('ffd8ff')) {
-      return true;
-    }
-    // Для PNG проверяем сигнатуру "89 50 4E 47"
-    if (mimeType === 'image/png' && fileSignature.startsWith('89504e47')) {
-      return true;
-    }
-    // Для GIF проверяем сигнатуру "47 49 46 38"
-    return mimeType === 'image/gif' && fileSignature.startsWith('47494638');
-  }
-
-
-
-
-
-
 
 
   async compressImage(file, maxSize: number = 200000) {
@@ -135,6 +105,19 @@ async uploadImage(fileId: string, width: number, height: number) {
     }
 
     return file;
+  };
 
+
+  isValidImageSignature(signature: string, mimetype: string): boolean {
+    const validSignatures: { [key: string]: string[] } = {
+        "image/jpeg": ["ffd8ff"],
+        "image/png": ["89504e47"],
+        "image/gif": ["47494638"],
+        "image/svg+xml": ["3c737667"]
+    };
+    const signatures = validSignatures[mimetype] || [];
+    return signatures.some((sig) => signature.startsWith(sig));
 }
+
+
 }

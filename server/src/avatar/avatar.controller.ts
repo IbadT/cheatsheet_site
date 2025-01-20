@@ -6,7 +6,7 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
-  HttpCode, HttpStatus, Res
+  HttpCode, HttpStatus, Res, BadRequestException
 } from '@nestjs/common';
 import { AvatarService } from './avatar.service';
 import {Avatar} from "./entities/avatar.entity";
@@ -36,25 +36,14 @@ export class AvatarController {
   @Get(":id")
   // async getAvatar(@Param('id') id: string, @Res() res: Response): Promise<Avatar> {
   async getAvatar(@Param('id') id: string, @Res() res: Response) {
-    const {avatar} = await this.avatarService.getAvatarById(id);
+    const {avatar, mimetype} = await this.avatarService.getAvatarById(id);
 
 
     const buff = Buffer.from(avatar);
-    res.setHeader('Content-Type', "image/jpg");
+    // res.setHeader('Content-Type', "image/jpg");
+    res.setHeader('Content-Type', mimetype);
     res.setHeader('Content-Disposition', `inline; filename="123"`);
-    res.send(buff);
-    return;
-
-
-
-
-
-
-    // проверка
-    // const buffer = Buffer.from(avatar, 'base64');
-    // res.setHeader('Content-Type', 'image/jpeg');
-    // res.setHeader('Content-Length', buffer.length.toString());
-    // res.end(buffer);
+    return res.send(buff);
   }
 
 
@@ -92,67 +81,34 @@ export class AvatarController {
   // async addAvatar(@UploadedFile() file): Promise<{ message: string }> {
   async addAvatar(@UploadedFile() file, @Res() res: Response){
 
-    const {mimetype} = file;
+    const {mimetype, originalname} = file;
 
-            if (!mimetype.startsWith("image/")) {
-                throw new Error("Загруженный файл не является изображением");
-            }
+    if (!mimetype.startsWith("image/")) {
+        throw new BadRequestException("Загруженный файл не является изображением")
+    }
 
-            const fileSignature = file.buffer.toString("hex", 0, 4); // Проверяем первые 4 байта файла
-            if (!this.isValidImageSignature(fileSignature, mimetype)) {
-                throw new Error("Загруженный файл не является действительным изображением");
-            }
+    const fileSignature = file.buffer.toString("hex", 0, 4); // Проверяем первые 4 байта файла
+    if (!this.avatarService.isValidImageSignature(fileSignature, mimetype)) {
+      throw new BadRequestException("Загруженный файл не является действительным изображением");
+    }
 
-            const compressedBuffer = await this.avatarService.compressImage(file);
+    const compressedBuffer = await this.avatarService.compressImage(file);
 
-            if (compressedBuffer.length > 200000) {
-                throw new Error("Сжатое изображение превышает 200 КБ");
-            }
+    if (compressedBuffer.length > 200000) {
+      throw new BadRequestException("Сжатое изображение превышает 200 КБ");
+    }
 
-            const result =  await this.avatarService.uploadFile(compressedBuffer.buffer);
-            res.send(result);
-            // return compressedBuffer;
-            // const result = await this.avatarService.uploadImage();
+    const result =  await this.avatarService.uploadFile(compressedBuffer.buffer, mimetype, originalname);
 
-            // const uploadedFile = await this.avatarService.uploadFile(compressedBuffer.originalname, mimetype, compressedBuffer.size, compressedBuffer);
-            // const result = await this.avatarService.uploadImage(uploadedFile.id, 0, 0); // Ширина и высота по умолчанию
+    const encodedFilename = encodeURIComponent(result.filename);
+            
+    res.setHeader('Content-Type', mimetype);
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodedFilename}`);
 
-            // res.send(result);
-
-
-
-
-
-
-
-
-    // if (!file.mimetype.startsWith('image/')) {
-    //   throw new Error('Загруженный файл не является изображением');
-    // }
-    // const buffer = file.buffer;
-    // const fileSignature = buffer.toString('hex', 0, 4); // Проверяем первые 4 байта файла
-    // const isImage = this.avatarService.isValidImageSignature(fileSignature, file.mimetype);
-    // if (!isImage) {
-    //   throw new Error('Загруженный файл не является действительным изображением');
-    // }
-
-    // // await this.compressImage(inputPath, outputPath, 1); // Сжать файл, если он выше 1МБ
-    // // return file.size;
-
-    // const filePath = file.buffer.toString('base64');
-    // return this.avatarService.addAvatar(filePath);
+    return res.send(result.avatar);
   };
 
-  private isValidImageSignature(signature: string, mimetype: string): boolean {
-    const validSignatures: { [key: string]: string[] } = {
-        "image/jpeg": ["ffd8ff"],
-        "image/png": ["89504e47"],
-        "image/gif": ["47494638"],
-        "image/svg+xml": ["3c737667"]
-    };
-    const signatures = validSignatures[mimetype] || [];
-    return signatures.some((sig) => signature.startsWith(sig));
-}
+
 
 
 

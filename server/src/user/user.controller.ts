@@ -10,7 +10,8 @@ import {
   UseGuards,
   Request,
   Req,
-  Delete
+  Delete,
+  BadRequestException
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -24,6 +25,7 @@ import {roles} from "../enums/roles.enum";
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignUpApiDocs } from './decorators/sign-up.decorator';
+import { ForgotPassword } from './dto/forgot-password.dto';
 
 
 export class CreateRole {
@@ -123,6 +125,24 @@ export class UserController {
   @Get('profile/:id')
   async getProfile(@Param('id') id: string) {
     return this.userService.getProfile(id);
+  }
+
+
+
+  // ДОДЕЛАТь
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPassword) {
+    let checkUser;
+    checkUser = await this.userService.getByEmail(body.email_or_username);
+    if(!checkUser) {
+      checkUser = await this.userService.getByUserName(body.email_or_username);
+    }
+    if(!checkUser) {
+      throw new BadRequestException("Неверные данные");
+    }
+    return await this.userService.editPassword(checkUser);
+    return { message: 'Запрос на восстановление пароля отправлен администратору' };
+    // return this.userService.forgotPassword(body);
   }
 
 
