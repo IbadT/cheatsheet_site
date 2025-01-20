@@ -33,15 +33,11 @@ export class PostService {
       },
       skip: (page-1) * limit,
       take: limit,
-      relations: ['likes', 'comments', 'user'],
+      relations: ['likes', 'comments', 'user', 'savedPosts'],
       order: {
         created_at: "DESC"
       }
     })
-    // return {
-    //   data, // [{ id, title, text, createdAt, updatedAt }]
-    //   total // 2
-    // }
     
     // const adminPosts = await this.postRepository.createQueryBuilder('post')
     //   .leftJoinAndSelect('post.likes', 'likes')
@@ -55,13 +51,15 @@ export class PostService {
     
     // получить пост(author(avarat, user_name), post, likes(колличество), saved(колличество), comments(колличество, authors))
     const allPosts = data.map(post => {
-      const likesCount = post.likes.length;
-      const commentsCount = post.comments.length;
+      // const likesCount = post.likes.length;
+      // const commentsCount = post.comments.length;
+      // const savedPost = post.savedPosts.length;
+      
       return {
         ...post,
-        likes: likesCount,
-        comments: commentsCount,
-        // savedPosts:
+        likes: post.likes.length,
+        comments: post.comments.length,
+        savedPosts: post.savedPosts.length,
         user: {
           user_name: post.user.user_name,
           rating: post.user.rating,
@@ -85,30 +83,31 @@ export class PostService {
 
 
   async getPostById(id: string) {
-    console.log({ id });
     
     const adminPost = await this.postRepository.findOne({
       where: {
         id
       },
-      relations: ['likes', 'comments']
+      relations: ['likes', 'comments', 'savedPosts']
     })
-    console.log({ adminPost });
-    const likesCount = adminPost.likes.length;
-    console.log({ likesCount });
     
+    const likesCount = adminPost.likes.length;
     const commentsCount = adminPost.comments.length;
-    console.log({
-      ...adminPost,
-      likes: likesCount,
-      comments: commentsCount
-    });
+    const savedPostCount = adminPost.savedPosts.length;
+    // console.log({
+    //   ...adminPost,
+    //   likes: likesCount,
+    //   comments: commentsCount,
+    //   savedPosts: savedPostCount
+    // });
     
     return {
       ...adminPost,
       likes: likesCount,
-      comments: commentsCount
-    }
+      comments: commentsCount,
+      savedPosts: savedPostCount
+    };
+
   };
 
   async addPost(body: CreatePostDto) {

@@ -9,7 +9,16 @@ import { AddLikeDto } from './dto/add-like.dto';
 
 @Controller('like')
 export class LikeController {
-  constructor(private readonly likeService: LikeService) {}
+  constructor(
+    private readonly likeService: LikeService
+  ) {}
+
+  @Get('who-likes/:post_id')
+  async watchWhoLikeThisPost(
+    @Param('post_id') post_id: string
+  ) {
+    return this.likeService.watchWhoLikeThisPost(post_id);
+  }
 
   @Post()
   async addLike(@Body() body: AddLikeDto) {

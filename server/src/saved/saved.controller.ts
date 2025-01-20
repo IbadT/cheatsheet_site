@@ -1,34 +1,38 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { SavedService } from './saved.service';
-import { CreateSavedDto } from './dto/create-saved.dto';
-import { UpdateSavedDto } from './dto/update-saved.dto';
+import { AddPostToSavedDto } from './dto/add-post-to-saved.dto';
 
 @Controller('saved')
 export class SavedController {
   constructor(private readonly savedService: SavedService) {}
 
+  @Get(":user_id")
+  async getAllSavedPost(@Param('user_id') user_id: string) {
+    return this.savedService.getAllSavedPost(user_id);
+  };
+
+  // пагинация
+  @Get("pagin/:user_id")
+  async getLimitSavedPostPerPage(
+    @Param("user_id") user_id: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 5,
+  ) {
+    return this.savedService.getLimitSavedPostPerPage(user_id, page, limit);
+  }
+
   @Post()
-  create(@Body() createSavedDto: CreateSavedDto) {
-    return this.savedService.create(createSavedDto);
+  async addPostToSaved(
+    @Body() body: AddPostToSavedDto,
+  ) {
+    return this.savedService.addPostToSaved(body)
   }
 
-  @Get()
-  findAll() {
-    return this.savedService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.savedService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSavedDto: UpdateSavedDto) {
-    return this.savedService.update(+id, updateSavedDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.savedService.remove(+id);
+  @Delete(":user_id/:post_id")
+  async removePostFromSaved(
+    @Param('user_id') user_id: string,
+    @Param('post_id') post_id: string
+  ) {
+    return this.savedService.removePostFromSaved(user_id, post_id);
   }
 }

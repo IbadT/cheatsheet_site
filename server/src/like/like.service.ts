@@ -19,6 +19,19 @@ export class LikeService {
     private readonly postService: PostService,
   ) {}
 
+  async watchWhoLikeThisPost(post_id: string) {
+    const post = await this.postService.getOnlyPost(post_id);
+    return await this.likeRepository.find({
+      where: {
+        post: {
+          id: post.id
+        }
+      },
+      relations: ['user']
+    });
+    
+  }
+
   async addLike(body: AddLikeDto) {
     const user = await this.userRepository.findOne({
       where: {
